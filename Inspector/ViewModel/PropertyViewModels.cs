@@ -18,38 +18,56 @@ namespace MyApp.ViewModel
     /// </summary>
     public class PropertyViewModelBase
     {
-        public string Name { get; set; }
-        public object Value { get; set; }
+        public object Model { get; set; }
+        public object? Parent { get; set; }
 
-        public PropertyViewModelBase(string name, object value)
+        public string Name { get; set; }
+        public ICommand DeleteItemCommand => new RelayCommand(DeleteItem, CanDeleteItem);
+
+        public PropertyViewModelBase(string name, object value, object? parent)
         {
+            Parent = parent;
+            Model = value;
             Name = name;
-            Value = value;
         }
 
-        public static PropertyViewModelBase CreateViewModel(string name, object item)
+        public static PropertyViewModelBase CreateViewModel(string name, object item, object? parent = null)
         {
             var itemType = item.GetType();
 
             if (itemType.IsEnum)
             {
-                return new EnumPropertyViewModel(name, item);
+                return new EnumPropertyViewModel(name, item, parent);
             }
             else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string))
             {
-                return new CollectionPropertyViewModel(name, item);
+                return new CollectionPropertyViewModel(name, item, parent);
             }
             else if (itemType.IsClass && itemType != typeof(string))
             {
-                return new ClassPropertyViewModel(name, item);
+                return new ClassPropertyViewModel(name, item, parent);
             }
             else
             {
-                return new PropertyViewModelBase(name, item);
+                return new PropertyViewModelBase(name, item, parent);
             }
 
             throw new InvalidOperationException();
         }
+
+        private void DeleteItem()
+        {
+            if (Parent is System.Collections.IList list)
+            {
+                list.Remove(Model);
+            }
+        }
+
+        private bool CanDeleteItem()
+        {
+            return Parent is System.Collections.IList list && list.Contains(Model);
+        }
+
     }
 
     /// <summary>
@@ -57,8 +75,8 @@ namespace MyApp.ViewModel
     /// </summary>
     public class ClassPropertyViewModel : PropertyViewModelBase
     {
-        public ClassPropertyViewModel(string name, object obj)
-            : base(name, obj)
+        public ClassPropertyViewModel(string name, object obj, object? parent = null)
+            : base(name, obj, parent)
         {
             Properties.Clear();
 
@@ -90,12 +108,11 @@ namespace MyApp.ViewModel
     {
         public ICommand AddItemCommand { get; }
 
-        public CollectionPropertyViewModel(string name, object value)
-            : base(name, value)
+        public CollectionPropertyViewModel(string name, object value, object? parent = null)
+            : base(name, value, parent)
         {
             Model = value;
 
-            // Collectionはプロパティではないので、プロパティネームが取れない
             if (value is System.Collections.IEnumerable enumerable && value.GetType() != typeof(string))
             {
                 foreach (var item in enumerable)
@@ -103,11 +120,95 @@ namespace MyApp.ViewModel
                     if (item == null)
                         continue;
 
-                    Properties.Add(CreateViewModel(item.GetType().Name, item));
+                    Properties.Add(CreateViewModel(item.GetType().Name, item, Model));
                 }
             }
 
+            // CollectionChangedイベントの購読
+            if (value is System.Collections.Specialized.INotifyCollectionChanged notifyCollection)
+            {
+                notifyCollection.CollectionChanged += OnCollectionChanged;
+            }
+
             AddItemCommand = new RelayCommand(AddItem, CanAddItem);
+        }
+
+        private void OnCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            // 追加
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && e.NewItems != null)
+            {
+                foreach (var newItem in e.NewItems)
+                {
+                    if (newItem == null) continue;
+                    Properties.Add(CreateViewModel(newItem.GetType().Name, newItem, Model));
+                }
+            }
+            // 削除
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Remove && e.OldItems != null)
+            {
+                foreach (var oldItem in e.OldItems)
+                {
+                    foreach(var item in Properties)
+                    {
+                        if(item.Model.Equals(oldItem))
+                        {
+                            Properties.Remove(item);
+                            break;
+                        }
+                    }
+                }
+            }
+            // リセット
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            {
+                Properties.Clear();
+                if (Model is System.Collections.IEnumerable enumerable && Model.GetType() != typeof(string))
+                {
+                    foreach (var item in enumerable)
+                    {
+                        if (item == null)
+                            continue;
+                        Properties.Add(CreateViewModel(item.GetType().Name, item, Model));
+                    }
+                }
+            }
+            // 置換
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Replace && e.NewItems != null && e.OldItems != null)
+            {
+                int index = e.OldStartingIndex;
+                foreach (var oldItem in e.OldItems)
+                {
+                    var vm = Properties.FirstOrDefault(p => p.Model.Equals(oldItem));
+                    if (vm != null)
+                        Properties.Remove(vm);
+                }
+                foreach (var newItem in e.NewItems)
+                {
+                    if (newItem == null) continue;
+                    Properties.Insert(index, CreateViewModel(newItem.GetType().Name, newItem, Model));
+                    index++;
+                }
+            }
+            // 移動
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Move && e.OldItems != null)
+            {
+                // 移動前のVMを取得
+                var vms = e.OldItems.Cast<object>()
+                    .Select(item => Properties.FirstOrDefault(p => p.Model.Equals(item)))
+                    .Where(vm => vm != null)
+                    .ToList();
+
+                foreach (var vm in vms)
+                {
+                    Properties.Remove(vm!);
+                }
+                int insertIndex = e.NewStartingIndex;
+                foreach (var vm in vms)
+                {
+                    Properties.Insert(insertIndex++, vm!);
+                }
+            }
         }
 
         private void AddItem()
@@ -132,9 +233,7 @@ namespace MyApp.ViewModel
                 }
 
                 addMethod.Invoke(Model, new object[] { newItem! });
-
-                // @todo:CollectionChanged見て作っ他方が良さそう
-                Properties.Add(CreateViewModel(elementType.Name, newItem!));
+                // CollectionChangedイベントでPropertiesに追加される
             }
         }
 
@@ -143,21 +242,16 @@ namespace MyApp.ViewModel
             var listType = Model.GetType();
             return listType.GetMethod("Add") != null;
         }
-        public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new ();
 
-        private object Model
-        {
-            get;set;
-        }
-
+        public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new();
     }
 
     public class EnumPropertyViewModel : PropertyViewModelBase
     {
         public ObservableCollection<string> Properties { get; set; } = new();
 
-        public EnumPropertyViewModel(string name, object value)
-            : base(name, value)
+        public EnumPropertyViewModel(string name, object value, object? parent = null)
+            : base(name, value, parent)
         {
             if (value != null)
             {
