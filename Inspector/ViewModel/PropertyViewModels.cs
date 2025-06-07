@@ -25,6 +25,30 @@ namespace MyApp.ViewModel
             Name = name;
             Value = value;
         }
+
+        public static PropertyViewModelBase CreateViewModel(string name, object item)
+        {
+            var itemType = item.GetType();
+
+            if (itemType.IsEnum)
+            {
+                return new EnumPropertyViewModel(itemType.Name, item);
+            }
+            else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string))
+            {
+                return new CollectionPropertyViewModel(itemType.Name, item);
+            }
+            else if (itemType.IsClass && itemType != typeof(string))
+            {
+                return new ClassPropertyViewModel(itemType.Name, item);
+            }
+            else
+            {
+                return new PropertyViewModelBase(itemType.Name, item);
+            }
+
+            throw new InvalidOperationException();
+        }
     }
 
     /// <summary>
@@ -42,34 +66,12 @@ namespace MyApp.ViewModel
                 if (prop.CanRead && prop.CanWrite)
                 {
                     var value = prop.GetValue(obj);
-
                     if (value == null)
                     {
                         continue;
                     }
 
-                    // コレクション型かどうか判定（stringは除外）
-                    if (typeof(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) && prop.PropertyType != typeof(string))
-                    {
-                        Dispatcher.CurrentDispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new CollectionPropertyViewModel(prop.Name, value));
-                        });
-                    }
-                    else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
-                    {
-                        Dispatcher.CurrentDispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new ClassPropertyViewModel(prop.Name, value));
-                        });
-                    }
-                    else
-                    {
-                        Dispatcher.CurrentDispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new PropertyViewModelBase(prop.Name, value));
-                        });
-                    }
+                    Properties.Add(CreateViewModel(prop.Name, value));
                 }
             }
         }
@@ -81,11 +83,12 @@ namespace MyApp.ViewModel
     {
         public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new ();
 
+
+
         public CollectionPropertyViewModel(string name, object value)
             : base(name, value)
         {
-            Properties.Clear();
-
+            // Collectionはプロパティではないので、プロパティネームが取れない
             if (value is System.Collections.IEnumerable enumerable && value.GetType() != typeof(string))
             {
                 foreach (var item in enumerable)
@@ -93,24 +96,7 @@ namespace MyApp.ViewModel
                     if (item == null)
                         continue;
 
-                    var itemType = item.GetType();
-
-                    if (itemType.IsEnum)
-                    {
-                        Properties.Add(new EnumPropertyViewModel(itemType.Name, item));
-                    }
-                    else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string))
-                    {
-                        Properties.Add(new CollectionPropertyViewModel(itemType.Name, item));
-                    }
-                    else if (itemType.IsClass && itemType != typeof(string))
-                    {
-                        Properties.Add(new ClassPropertyViewModel(itemType.Name, item));
-                    }
-                    else
-                    {
-                        Properties.Add(new PropertyViewModelBase(itemType.Name, item));
-                    }
+                    Properties.Add(CreateViewModel(item.GetType().Name, item));
                 }
             }
         }

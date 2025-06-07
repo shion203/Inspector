@@ -127,24 +127,7 @@ namespace MyApp
                         continue;
                     }
 
-                    // コレクション型かどうか判定（stringは除外）
-                    if (typeof(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) && prop.PropertyType != typeof(string))
-                    {
-                        list.Add(new CollectionPropertyViewModel(prop.Name, value));
-                    }
-                    // Enum型対応
-                    else if (prop.PropertyType.IsEnum)
-                    {
-                        list.Add(new EnumPropertyViewModel(prop.Name, value));
-                    }
-                    else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
-                    {
-                        list.Add(new ClassPropertyViewModel(prop.Name, value));
-                    }
-                    else
-                    {
-                        list.Add(new PropertyViewModelBase(prop.Name, value));
-                    }
+                    list.Add(PropertyViewModelBase.CreateViewModel(prop.Name, value));
                 }
             }
             return list;
