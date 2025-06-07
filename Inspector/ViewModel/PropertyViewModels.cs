@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using System.Windows.Input;
 
 // @file 特定の型に対応したViewModelの定義群
 
@@ -79,15 +80,21 @@ namespace MyApp.ViewModel
         public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new ();
     }
 
+
+
+
+    /// <summary>
+    /// Collection用
+    /// </summary>
     public class CollectionPropertyViewModel : PropertyViewModelBase
     {
-        public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new ();
-
-
+        public ICommand AddItemCommand { get; }
 
         public CollectionPropertyViewModel(string name, object value)
             : base(name, value)
         {
+            Model = value;
+
             // Collectionはプロパティではないので、プロパティネームが取れない
             if (value is System.Collections.IEnumerable enumerable && value.GetType() != typeof(string))
             {
@@ -99,7 +106,50 @@ namespace MyApp.ViewModel
                     Properties.Add(CreateViewModel(item.GetType().Name, item));
                 }
             }
+
+            AddItemCommand = new RelayCommand(AddItem, CanAddItem);
         }
+
+        private void AddItem()
+        {
+            var listType = Model.GetType();
+            var addMethod = listType.GetMethod("Add");
+            if (addMethod != null)
+            {
+                var elementType = listType.IsGenericType
+                    ? listType.GetGenericArguments()[0]
+                    : typeof(object);
+
+                object? newItem = null;
+                try
+                {
+                    newItem = Activator.CreateInstance(elementType);
+                }
+                catch
+                {
+                    // インスタンス化できない場合は何もしない
+                    return;
+                }
+
+                addMethod.Invoke(Model, new object[] { newItem! });
+
+                // @todo:CollectionChanged見て作っ他方が良さそう
+                Properties.Add(CreateViewModel(elementType.Name, newItem!));
+            }
+        }
+
+        private bool CanAddItem()
+        {
+            var listType = Model.GetType();
+            return listType.GetMethod("Add") != null;
+        }
+        public ObservableCollection<PropertyViewModelBase> Properties { get; set; } = new ();
+
+        private object Model
+        {
+            get;set;
+        }
+
     }
 
     public class EnumPropertyViewModel : PropertyViewModelBase

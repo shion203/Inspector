@@ -20,7 +20,7 @@
             </StackPanel>
         </DataTemplate>
 
-        <!--Classの見た目-->
+        
         <DataTemplate DataType="{x:Type local_vm:ClassPropertyViewModel}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock  Text="{Binding Name}" Margin="0,0,5,0" Foreground="Red"/>
@@ -41,7 +41,7 @@
             <StackPanel >
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Green"/>
-                    <Button Content="+" Width="20" Height="20"/>
+                    <Button Content="+" Width="20" Height="20" Command="{Binding AddItemCommand}"/>
                 </StackPanel>
 
                 <ListView ItemsSource="{Binding Properties}">
