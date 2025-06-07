@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace MyApp
 {
@@ -17,6 +18,35 @@ namespace MyApp
     /// </summary>
     public partial class MyInspector : UserControl
     {
+        public MyInspector()
+        {
+            InitializeComponent();
+            this.PreviewMouseWheel += MyInspector_PreviewMouseWheel;
+        }
+
+        private void MyInspector_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // 親のScrollViewerを探してスクロールさせる
+            var parent = this.Parent;
+            while (parent != null && !(parent is ScrollViewer))
+            {
+                if (parent is FrameworkElement fe)
+                    parent = fe.Parent;
+                else
+                    break;
+            }
+
+            if (parent is ScrollViewer scrollViewer)
+            {
+                if (e.Delta < 0)
+                    scrollViewer.LineDown();
+                else
+                    scrollViewer.LineUp();
+
+                e.Handled = true;
+            }
+        }
+
         /// <summary>
         /// 表示対象オブジェクトのプロパティ情報を格納するコレクション。
         /// 各要素はPropertyViewModelとしてプロパティ名と値を保持する。
@@ -49,14 +79,6 @@ namespace MyApp
                 new PropertyMetadata(null, OnTargetObjectChanged));
 
         /// <summary>
-        /// コンストラクタ。コントロールの初期化を行う。
-        /// </summary>
-        public MyInspector()
-        {
-            InitializeComponent();
-        }
-
-        /// <summary>
         /// TargetObjectプロパティが変更されたときに呼ばれるコールバック。
         /// 新しいオブジェクトのプロパティ一覧を読み込む。
         /// </summary>
@@ -77,6 +99,22 @@ namespace MyApp
         private void LoadProperties(object obj)
         {
             Properties.Clear();
+            var propertyViewModels = CreatePropertyViewModels(obj);
+            foreach (var vm in propertyViewModels)
+            {
+                Properties.Add(vm);
+            }
+        }
+
+        /// <summary>
+        /// 指定オブジェクトのプロパティを適切なViewModelに変換してリストで返す（static版）。
+        /// </summary>
+        /// <param name="obj">プロパティ一覧を取得する対象オブジェクト</param>
+        /// <returns>PropertyViewModelBaseのリスト</returns>
+        public static List<PropertyViewModelBase> CreatePropertyViewModels(object obj)
+        {
+            var list = new List<PropertyViewModelBase>();
+            if (obj == null) return list;
 
             foreach (PropertyInfo prop in obj.GetType().GetProperties())
             {
@@ -92,28 +130,26 @@ namespace MyApp
                     // コレクション型かどうか判定（stringは除外）
                     if (typeof(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType) && prop.PropertyType != typeof(string))
                     {
-                        Dispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new CollectionPropertyViewModel(prop.Name, value));
-                        });
+                        list.Add(new CollectionPropertyViewModel(prop.Name, value));
+                    }
+                    // Enum型対応
+                    else if (prop.PropertyType.IsEnum)
+                    {
+                        list.Add(new EnumPropertyViewModel(prop.Name, value));
                     }
                     else if (prop.PropertyType.IsClass && prop.PropertyType != typeof(string))
                     {
-                        Dispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new ClassPropertyViewModel(prop.Name, value));
-                        });
+                        list.Add(new ClassPropertyViewModel(prop.Name, value));
                     }
                     else
                     {
-                        Dispatcher.Invoke(() =>
-                        {
-                            Properties.Add(new PropertyViewModelBase(prop.Name, value));
-                        });
+                        list.Add(new PropertyViewModelBase(prop.Name, value));
                     }
                 }
             }
+            return list;
         }
+
     }
 
 }

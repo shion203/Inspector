@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
+// @file 特定の型に対応したViewModelの定義群
+
 namespace MyApp.ViewModel
 {
     /// <summary>
@@ -116,9 +118,22 @@ namespace MyApp.ViewModel
 
     public class EnumPropertyViewModel : PropertyViewModelBase
     {
+        public ObservableCollection<string> Properties { get; set; } = new();
+
         public EnumPropertyViewModel(string name, object value)
             : base(name, value)
         {
+            if (value != null)
+            {
+                var enumType = value.GetType();
+                if (enumType.IsEnum)
+                {
+                    foreach (var enumValue in Enum.GetValues(enumType))
+                    {
+                        Properties.Add(enumValue.ToString()!);
+                    }
+                }
+            }
         }
     }
 

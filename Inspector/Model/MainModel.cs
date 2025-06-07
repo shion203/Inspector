@@ -28,6 +28,31 @@ namespace MyApp.Model
 
         public ObservableCollection<int> HogeIntCollection { get; set; } = new ObservableCollection<int> { 1, 2, 3, 4, 5 };
 
+        public ObservableCollection<HogeClass2> Hoge2ClassCollection { get; set; } = new()
+        {
+            new HogeClass2
+            {
+                HogeInt = 10,
+                HogeFloat = 2.5f,
+                HogeString = "Hoge2-1",
+                HogeIntCollection = new ObservableCollection<int> { 10, 20, 30 }
+            },
+            new HogeClass2
+            {
+                HogeInt = 20,
+                HogeFloat = 3.5f,
+                HogeString = "Hoge2-2",
+                HogeIntCollection = new ObservableCollection<int> { 40, 50, 60 }
+            },
+            new HogeClass2
+            {
+                HogeInt = 30,
+                HogeFloat = 4.5f,
+                HogeString = "Hoge2-3",
+                HogeIntCollection = new ObservableCollection<int> { 70, 80, 90 }
+            }
+        };
+
         public HogeClass2 Hoge2 { get; set; } = new HogeClass2
         {
             HogeInt = 100,

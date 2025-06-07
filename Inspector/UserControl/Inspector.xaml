@@ -53,6 +53,16 @@
             </StackPanel>
         </DataTemplate>
         
+        
+        <DataTemplate DataType="{x:Type local_vm:EnumPropertyViewModel}">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Blue"/>
+                <ComboBox Width="100"
+                          ItemsSource="{Binding Properties}"
+                          SelectedItem="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+        </DataTemplate>
+        
     </UserControl.Resources>
 
     <!--Inspectorの表示部分-->
