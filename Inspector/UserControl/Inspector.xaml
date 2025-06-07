@@ -20,6 +20,7 @@
             </StackPanel>
         </DataTemplate>
 
+        <!--Classの見た目-->
         <DataTemplate DataType="{x:Type local_vm:ClassPropertyViewModel}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock  Text="{Binding Name}" Margin="0,0,5,0" Foreground="Red"/>
@@ -32,23 +33,26 @@
                     </ListView.ItemTemplate>
                 </ListView>
                 
-                <!--
-                <ListView ItemsSource="{Binding Properties}">
-                    <DataTemplate>
-                        <TextBlock Text="Hoge"></TextBlock>
-                        
-                        <ContentPresenter Content="{Binding}"/>
-                    </DataTemplate>
-                </ListView>
-                -->
             </StackPanel>
         </DataTemplate>
 
         <!--collectionの見た目-->
         <DataTemplate DataType="{x:Type local_vm:CollectionPropertyViewModel}">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Green"/>
+            <StackPanel >
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Green"/>
+                    <Button Content="+" Width="20" Height="20"/>
+                </StackPanel>
+
                 <ListView ItemsSource="{Binding Properties}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <ContentPresenter Content="{Binding}"/>
+                                <Button Content="del"></Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
                 </ListView>
             </StackPanel>
         </DataTemplate>

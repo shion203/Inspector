@@ -32,19 +32,19 @@ namespace MyApp.ViewModel
 
             if (itemType.IsEnum)
             {
-                return new EnumPropertyViewModel(itemType.Name, item);
+                return new EnumPropertyViewModel(name, item);
             }
             else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string))
             {
-                return new CollectionPropertyViewModel(itemType.Name, item);
+                return new CollectionPropertyViewModel(name, item);
             }
             else if (itemType.IsClass && itemType != typeof(string))
             {
-                return new ClassPropertyViewModel(itemType.Name, item);
+                return new ClassPropertyViewModel(name, item);
             }
             else
             {
-                return new PropertyViewModelBase(itemType.Name, item);
+                return new PropertyViewModelBase(name, item);
             }
 
             throw new InvalidOperationException();
