@@ -12,7 +12,10 @@
         <MyAppVM:MainViewModel></MyAppVM:MainViewModel>
     </Window.DataContext>
     <Grid>
-        <TextBlock Text="Hoge"></TextBlock>
+        
+        <TextBlock Text="↓Inspector表示"></TextBlock>
+        
+        <!--Inspectorによる表示-->
         <MyApp:MyInspector TargetObject="{Binding Model}"></MyApp:MyInspector>
 
     </Grid>

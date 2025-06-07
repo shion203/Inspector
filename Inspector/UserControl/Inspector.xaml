@@ -10,19 +10,36 @@
     <UserControl.Resources>
         
         <!--デフォルト(未カスタム)-->
-        <DataTemplate DataType="{x:Type local:PropertyViewModelBase}">
+        <DataTemplate DataType="{x:Type local_vm:PropertyViewModelBase}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="0,0,5,0" />
             </StackPanel>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type local:ClassPropertyViewModel}">
+        <DataTemplate DataType="{x:Type local_vm:ClassPropertyViewModel}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock  Text="{Binding Name}" Margin="0,0,5,0" Foreground="Red"/>
+
+                <ListView ItemsSource="{Binding Properties}">
+                    <!--なぜかこれが怒られる
+                    <DataTemplate>
+                    </DataTemplate>
+                    -->
+                </ListView>
+                
+                <!--
+                <ListView ItemsSource="{Binding Properties}">
+                    <DataTemplate>
+                        <TextBlock Text="Hoge"></TextBlock>
+                        
+                        <ContentPresenter Content="{Binding}"/>
+                    </DataTemplate>
+                </ListView>
+                        -->
             </StackPanel>
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type local:CollectionPropertyViewModel}">
+        <DataTemplate DataType="{x:Type local_vm:CollectionPropertyViewModel}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Green"/>
             </StackPanel>
