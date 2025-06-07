@@ -7,7 +7,8 @@
         xmlns:MyApp="clr-namespace:MyApp"
         xmlns:MyAppVM="clr-namespace:MyApp.ViewModel"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800"
+        WindowState="Maximized">
     <Window.DataContext>
         <MyAppVM:MainViewModel></MyAppVM:MainViewModel>
     </Window.DataContext>

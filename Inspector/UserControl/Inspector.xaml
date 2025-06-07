@@ -7,12 +7,16 @@
              xmlns:local_vm="clr-namespace:MyApp.ViewModel"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+
     <UserControl.Resources>
-        
+
+        <!--各PropertyViewModelに対応した、見た目の設定-->
+
         <!--デフォルト(未カスタム)-->
         <DataTemplate DataType="{x:Type local_vm:PropertyViewModelBase}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="0,0,5,0" />
+                <TextBox Width="100" Text="{Binding Value}"></TextBox>
             </StackPanel>
         </DataTemplate>
 
@@ -21,10 +25,11 @@
                 <TextBlock  Text="{Binding Name}" Margin="0,0,5,0" Foreground="Red"/>
 
                 <ListView ItemsSource="{Binding Properties}">
-                    <!--なぜかこれが怒られる
-                    <DataTemplate>
-                    </DataTemplate>
-                    -->
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding}"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
                 </ListView>
                 
                 <!--
@@ -35,18 +40,22 @@
                         <ContentPresenter Content="{Binding}"/>
                     </DataTemplate>
                 </ListView>
-                        -->
+                -->
             </StackPanel>
         </DataTemplate>
 
+        <!--collectionの見た目-->
         <DataTemplate DataType="{x:Type local_vm:CollectionPropertyViewModel}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="0,0,5,0" Foreground="Green"/>
+                <ListView ItemsSource="{Binding Properties}">
+                </ListView>
             </StackPanel>
         </DataTemplate>
         
     </UserControl.Resources>
 
+    <!--Inspectorの表示部分-->
     <Grid DataContext="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}">
 
         <ListView ItemsSource="{Binding Properties}">
@@ -58,4 +67,5 @@
         </ListView>
         
     </Grid>
+    
 </UserControl>
