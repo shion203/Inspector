@@ -1,4 +1,5 @@
-﻿using MyApp.ViewModel;
+﻿using Inspector.Model;
+using MyApp.ViewModel;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Windows;
@@ -69,6 +70,21 @@ namespace MyApp
                 LoadProperties(value); 
             }
         }
+        /// <summary>
+        /// Undo/Redo操作を管理するUndoManager。
+        /// </summary>
+        public UndoManager UndoManager
+        {
+            get { return (UndoManager)GetValue(UndoManagerProperty); }
+            set { SetValue(UndoManagerProperty, value); }
+        }
+
+        /// <summary>
+        /// UndoManager依存関係プロパティの定義。
+        /// </summary>
+        public static readonly DependencyProperty UndoManagerProperty =
+            DependencyProperty.Register(nameof(UndoManager), typeof(UndoManager), typeof(MyInspector),
+                new PropertyMetadata(null, OnUndoManagerChanged));
 
         /// <summary>
         /// TargetObject依存関係プロパティの定義。
@@ -77,6 +93,7 @@ namespace MyApp
         public static readonly DependencyProperty TargetObjectProperty =
             DependencyProperty.Register(nameof(TargetObject), typeof(object), typeof(MyInspector),
                 new PropertyMetadata(null, OnTargetObjectChanged));
+
 
         /// <summary>
         /// TargetObjectプロパティが変更されたときに呼ばれるコールバック。
@@ -98,12 +115,22 @@ namespace MyApp
         /// <param name="obj">プロパティ一覧を取得する対象オブジェクト</param>
         private void LoadProperties(object obj)
         {
+            /// 初期化開始.
+            var undoManager =
+                this.GetValue(UndoManagerProperty) as UndoManager;// もし設定されていなければ新規作成
+
+            // 初期化中はundoバッファに載せない
+            undoManager!.IsEnabled = false;
+
             Properties.Clear();
-            var propertyViewModels = CreatePropertyViewModels(obj);
+            var propertyViewModels = CreatePropertyViewModels(undoManager, obj);
             foreach (var vm in propertyViewModels)
             {
                 Properties.Add(vm);
             }
+
+            // 初期化終了
+            undoManager.IsEnabled = true;
         }
 
         /// <summary>
@@ -111,7 +138,7 @@ namespace MyApp
         /// </summary>
         /// <param name="obj">プロパティ一覧を取得する対象オブジェクト</param>
         /// <returns>PropertyViewModelBaseのリスト</returns>
-        public static List<PropertyViewModelBase> CreatePropertyViewModels(object obj)
+        public static List<PropertyViewModelBase> CreatePropertyViewModels(UndoManager undoManager, object obj)
         {
             var list = new List<PropertyViewModelBase>();
             if (obj == null) return list;
@@ -127,12 +154,16 @@ namespace MyApp
                         continue;
                     }
 
-                    list.Add(PropertyViewModelBase.CreateViewModel(prop.Name, value));
+                    list.Add(PropertyViewModelBase.CreateViewModel(undoManager,prop.Name, value));
                 }
             }
             return list;
         }
 
+
+        private static void OnUndoManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+        }
     }
 
 }

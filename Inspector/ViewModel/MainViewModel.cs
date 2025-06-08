@@ -12,8 +12,19 @@ namespace MyApp.ViewModel
 {
     public class MainViewModel : INotifyPropertyChanged
     {
+        public ICommand UndoCommand { get; set; }
+        public ICommand RedoCommand { get; set; }
+        
         public MainViewModel()
         {
+            UndoCommand = new RelayCommand(
+                () => Model.UndoManager.Undo(),
+                () => Model.UndoManager.CanUndo);
+
+            RedoCommand ??= new RelayCommand(
+                () => Model.UndoManager.Redo(),
+                () => Model.UndoManager.CanRedo);
+
             _mainModel = new MainModel();
         }
 

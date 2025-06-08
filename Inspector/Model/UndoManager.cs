@@ -15,6 +15,8 @@ namespace Inspector.Model
     // Undo/Redoを管理するUndoManager
     public class UndoManager
     {
+        public bool IsEnabled { get; set; } = true;
+
         private readonly Stack<IUndoableCommand> _undoStack = new();
         private readonly Stack<IUndoableCommand> _redoStack = new();
 
@@ -58,6 +60,7 @@ namespace Inspector.Model
         // コマンドを実行せずにUndoスタックに追加
         public void RegisterCommand(IUndoableCommand command)
         {
+            if(!IsEnabled) return;
             _undoStack.Push(command);
             _redoStack.Clear();
         }

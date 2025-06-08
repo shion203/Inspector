@@ -12,12 +12,16 @@
     <Window.DataContext>
         <MyAppVM:MainViewModel></MyAppVM:MainViewModel>
     </Window.DataContext>
+    <Window.InputBindings>
+        <KeyBinding Key="Z" Modifiers="Control" Command="{Binding UndoCommand}"/>
+        <KeyBinding Key="Y" Modifiers="Control" Command="{Binding RedoCommand}"/>
+    </Window.InputBindings>
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
             <StackPanel>
                 <TextBlock Text="Inspector"></TextBlock>
                 <!--Inspectorによる表示-->
-                <MyApp:MyInspector TargetObject="{Binding Model.Asset}"/>
+                <MyApp:MyInspector UndoManager="{Binding Model.UndoManager}" TargetObject="{Binding Model.Asset}" />
             </StackPanel>
         </ScrollViewer>
     </Grid>

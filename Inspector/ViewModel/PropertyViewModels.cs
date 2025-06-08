@@ -1,4 +1,5 @@
-﻿using MyApp.Model;
+﻿using Inspector.Model;
+using MyApp.Model;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,6 +21,8 @@ namespace MyApp.ViewModel
     /// </summary>
     public class PropertyViewModelBase : NotifyPropertyChangedBase
     {
+        protected UndoManager undoManager;
+
         public object Model 
         {
             get
@@ -28,9 +31,13 @@ namespace MyApp.ViewModel
             }
             set
             {
-                // 別にここでundo対応しても構わない？
-                // propertychangedでやる意味は、無いっちゃないかな…
-                SetProperty(ref model, value);
+                //@todo:undoManagerへの登録
+
+                var oldValue = model;
+                var newValue = value;
+                var command = new UndoableCommand(() => SetProperty(ref model, newValue), () => SetProperty(ref model, oldValue));
+
+                undoManager.Execute(command);
             }
         }
         private object model;
@@ -40,32 +47,33 @@ namespace MyApp.ViewModel
         public string Name { get; set; }
         public ICommand DeleteItemCommand => new RelayCommand(DeleteItem, CanDeleteItem);
 
-        public PropertyViewModelBase(string name, object value, object? parent)
+        public PropertyViewModelBase(UndoManager undoManager, string name, object value, object? parent)
         {
             model = value;
             Parent = parent;
             Name = name;
+            this.undoManager = undoManager;
         }
 
-        public static PropertyViewModelBase CreateViewModel(string name, object item, object? parent = null)
+        public static PropertyViewModelBase CreateViewModel(UndoManager undoManager, string name, object item, object ? parent = null)
         {
             var itemType = item.GetType();
 
             if (itemType.IsEnum)
             {
-                return new EnumPropertyViewModel(name, item, parent);
+                return new EnumPropertyViewModel(undoManager, name, item, parent);
             }
             else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string))
             {
-                return new CollectionPropertyViewModel(name, item, parent);
+                return new CollectionPropertyViewModel(undoManager,name, item, parent);
             }
             else if (itemType.IsClass && itemType != typeof(string))
             {
-                return new ClassPropertyViewModel(name, item, parent);
+                return new ClassPropertyViewModel(undoManager,name, item, parent);
             }
             else
             {
-                return new PropertyViewModelBase(name, item, parent);
+                return new PropertyViewModelBase(undoManager,name, item, parent);
             }
 
             throw new InvalidOperationException();
@@ -91,8 +99,8 @@ namespace MyApp.ViewModel
     /// </summary>
     public class ClassPropertyViewModel : PropertyViewModelBase
     {
-        public ClassPropertyViewModel(string name, object obj, object? parent = null)
-            : base(name, obj, parent)
+        public ClassPropertyViewModel(UndoManager undoManager, string name, object obj, object? parent = null)
+            : base(undoManager,name, obj, parent)
         {
             Properties.Clear();
 
@@ -106,7 +114,7 @@ namespace MyApp.ViewModel
                         continue;
                     }
 
-                    Properties.Add(CreateViewModel(prop.Name, value));
+                    Properties.Add(CreateViewModel(undoManager, prop.Name, value));
                 }
             }
         }
@@ -124,8 +132,8 @@ namespace MyApp.ViewModel
     {
         public ICommand AddItemCommand { get; }
 
-        public CollectionPropertyViewModel(string name, object value, object? parent = null)
-            : base(name, value, parent)
+        public CollectionPropertyViewModel(UndoManager undoManager, string name, object value, object? parent = null)
+            : base(undoManager, name, value, parent)
         {
             Model = value;
 
@@ -136,7 +144,7 @@ namespace MyApp.ViewModel
                     if (item == null)
                         continue;
 
-                    Properties.Add(CreateViewModel(item.GetType().Name, item, Model));
+                    Properties.Add(CreateViewModel(undoManager,item.GetType().Name, item, Model));
                 }
             }
 
@@ -157,7 +165,7 @@ namespace MyApp.ViewModel
                 foreach (var newItem in e.NewItems)
                 {
                     if (newItem == null) continue;
-                    Properties.Add(CreateViewModel(newItem.GetType().Name, newItem, Model));
+                    Properties.Add(CreateViewModel(undoManager, newItem.GetType().Name, newItem, Model));
                 }
             }
             // 削除
@@ -185,7 +193,7 @@ namespace MyApp.ViewModel
                     {
                         if (item == null)
                             continue;
-                        Properties.Add(CreateViewModel(item.GetType().Name, item, Model));
+                        Properties.Add(CreateViewModel(undoManager,item.GetType().Name, item, Model));
                     }
                 }
             }
@@ -202,7 +210,7 @@ namespace MyApp.ViewModel
                 foreach (var newItem in e.NewItems)
                 {
                     if (newItem == null) continue;
-                    Properties.Insert(index, CreateViewModel(newItem.GetType().Name, newItem, Model));
+                    Properties.Insert(index, CreateViewModel(undoManager, newItem.GetType().Name, newItem, Model));
                     index++;
                 }
             }
@@ -266,8 +274,8 @@ namespace MyApp.ViewModel
     {
         public ObservableCollection<string> Properties { get; set; } = new();
 
-        public EnumPropertyViewModel(string name, object value, object? parent = null)
-            : base(name, value, parent)
+        public EnumPropertyViewModel(UndoManager undomanager, string name, object value, object? parent = null)
+            : base(undomanager, name, value, parent)
         {
             if (value != null)
             {
