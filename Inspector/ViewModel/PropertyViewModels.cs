@@ -1,12 +1,14 @@
-﻿using System;
+﻿using MyApp.Model;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 // @file 特定の型に対応したViewModelの定義群
 
@@ -16,9 +18,23 @@ namespace MyApp.ViewModel
     /// プロパティ名と値を保持する表示用ViewModel。
     /// MyInspectorのPropertiesコレクションの要素として利用される。
     /// </summary>
-    public class PropertyViewModelBase
+    public class PropertyViewModelBase : NotifyPropertyChangedBase
     {
-        public object Model { get; set; }
+        public object Model 
+        {
+            get
+            {
+                return model;
+            }
+            set
+            {
+                // 別にここでundo対応しても構わない？
+                // propertychangedでやる意味は、無いっちゃないかな…
+                SetProperty(ref model, value);
+            }
+        }
+        private object model;
+
         public object? Parent { get; set; }
 
         public string Name { get; set; }
@@ -26,8 +42,8 @@ namespace MyApp.ViewModel
 
         public PropertyViewModelBase(string name, object value, object? parent)
         {
+            model = value;
             Parent = parent;
-            Model = value;
             Name = name;
         }
 

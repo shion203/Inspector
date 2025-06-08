@@ -17,7 +17,7 @@
             <StackPanel>
                 <TextBlock Text="Inspector"></TextBlock>
                 <!--Inspectorによる表示-->
-                <MyApp:MyInspector TargetObject="{Binding Model}"/>
+                <MyApp:MyInspector TargetObject="{Binding Model.Asset}"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>

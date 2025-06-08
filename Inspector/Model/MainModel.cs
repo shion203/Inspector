@@ -1,6 +1,9 @@
-﻿using System;
+﻿using Inspector.Model;
+using MyApp.ViewModel;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -72,7 +75,7 @@ namespace MyApp.Model
     /// <summary>
     /// Inspectorで表示する対象
     /// </summary>
-    public class MainModel
+    public class Asset : NotifyPropertyChangedBase
     {
         public enum HogeEnum
         {
@@ -97,6 +100,16 @@ namespace MyApp.Model
         /// クラスのケース
         /// </summary>
         public HogeClass HogeClass { get; set; } = new HogeClass { HogeInt = 100, HogeFloat = 1.5f, HogeString = "Hoge2String", HogeIntCollection = new ObservableCollection<int> { 1, 2, 3 } };
+    }
+
+    /// <summary>
+    /// Model層の操作を管理するクラス
+    /// </summary>
+    public class MainModel
+    {
+        public UndoManager UndoManager { get; set; } = new UndoManager();
+
+        public Asset Asset { get; set; } = new Asset();
     }
 
 }
